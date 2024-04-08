@@ -9,6 +9,33 @@ int max(int a, int b) { return (a > b) ? a : b; }
 
 
 
+
+int abs(int a) {
+    return (a < 0) ? -1 * a : a;
+}
+
+int maxCodom1(int index) {
+    int max = g_items[index];
+    for (int i = index + 1; i < g_n - (index + 1); ++i) {
+        if(max < g_items[i]) {
+            max = g_items[i];
+        }
+    }
+    return max;
+}
+
+int minCodom1(int index) {
+    int min = g_items[index];
+    for (int i = index + 1; i < g_n - (index + 1); ++i) {
+        if(min > g_items[i]) {
+            min = g_items[i];
+        }
+    }
+    return min;
+}
+
+
+
 // Définition de la structure pour les objets.
 typedef struct {
     unsigned int weight;
@@ -18,7 +45,7 @@ typedef struct {
 
 // Variables globales pour l'algorithme de backtracking
 // (ATTENTION: nous utilisons les variables globales dans cette version pour suivre le schéma vu en cours et en td)
-Item* g_itmes;             // tableau d'objets
+Item* g_items;             // tableau d'objets
 int g_n;                   // nombre d'objets
 int g_W;            // capacité du sac
 int g_bestValue = 0;       // meilleure valeur trouvée jusqu'à présent
@@ -33,20 +60,27 @@ void knapsackBT1(int idx) {
         return;
     }
 
+    int absExtT = max(abs(maxCodom1(idx)), abs(minCodom1(idx)));
+
+    if (!(absExtT * (g_n - idx + 1) < abs(currentValue))) {
+        return;
+    }
+
+
     // sauter l'objet courant
     knapsackBT1(idx + 1);
 
     // Inclure l'objet actuel s'il ne dépasse pas la capacité du sac à dos
-    if (g_currentWeight + g_itmes[idx].weight <= g_W) {
+    if (g_currentWeight + g_items[idx].weight <= g_W) {
         // Mettre à jour currentWeight et currentValue avant l'appel récursif
-        g_currentWeight += g_itmes[idx].weight;
-        g_currentValue += g_itmes[idx].value;
+        g_currentWeight += g_items[idx].weight;
+        g_currentValue += g_items[idx].value;
 
         knapsackBT1(idx + 1);
 
         // Annuler la décision d'inclure l'objet (backtracking)
-        g_currentWeight -= g_itmes[idx].weight;
-        g_currentValue -= g_itmes[idx].value;
+        g_currentWeight -= g_items[idx].weight;
+        g_currentValue -= g_items[idx].value;
     }
 }
 
@@ -155,7 +189,7 @@ int main() {
         // Ici, insérez la logique pour configurer et appeler vos fonctions de sac à dos.
         printf("n=%d, W=%d\n", n, W);
 
-        g_itmes = items;
+        g_items = items;
         g_n = n;
         g_W = W;
         g_bestValue = 0;       // meilleure valeur trouvée jusqu'à présent
