@@ -18,9 +18,10 @@ instances = []
 for num_items in range(MIN_ITEMS, MAX_ITEMS + 1, ITEM_STEP):
     for _ in range(NUM_INSTANCES_PER_SIZE):
         capacity = random.randint(MAX_CAPACITY // 2, MAX_CAPACITY)
+        min_weight = random.randint(1, capacity)
         weights = [random.randint(1, MAX_WEIGHT) for _ in range(num_items)]
         values = [random.randint(1, MAX_VALUE) for _ in range(num_items)]
-        instance = [capacity, num_items] + [val for pair in zip(weights, values) for val in pair]
+        instance = [capacity, min_weight, num_items] + [val for pair in zip(weights, values) for val in pair]
         instances.append(instance)
 
 # Write instances to CSV file
