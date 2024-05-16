@@ -6,34 +6,11 @@
 
 // Fonction utilitaire pour obtenir le maximum de deux nombres.
 int max(int a, int b) { return (a > b) ? a : b; }
-
-
-
+int min(int a, int b) { return (a < b) ? a : b; }
 
 int abs(int a) {
     return (a < 0) ? -1 * a : a;
 }
-
-int maxCodom1(int index) {
-    int max = g_items[index];
-    for (int i = index + 1; i < g_n - (index + 1); ++i) {
-        if(max < g_items[i]) {
-            max = g_items[i];
-        }
-    }
-    return max;
-}
-
-int minCodom1(int index) {
-    int min = g_items[index];
-    for (int i = index + 1; i < g_n - (index + 1); ++i) {
-        if(min > g_items[i]) {
-            min = g_items[i];
-        }
-    }
-    return min;
-}
-
 
 
 // Définition de la structure pour les objets.
@@ -52,35 +29,58 @@ int g_bestValue = 0;       // meilleure valeur trouvée jusqu'à présent
 int g_currentValue = 0;    // valeur courante du sac
 int g_currentWeight = 0;   // poids courant du sac
 
+int maxCodom1(int index) {
+    int max = g_items[index].value;
+    for (int i = index + 1; i < g_n - (index + 1); ++i) {
+        if(max < g_items[i].value) {
+            max = g_items[i].value;
+        }
+    }
+    return max;
+}
+
+int minCodom1(int index) {
+    int min = g_items[index].value;
+    for (int i = index + 1; i < g_n - (index + 1); ++i) {
+        if(min > g_items[i].value) {
+            min = g_items[i].value;
+        }
+    }
+    return min;
+}
+
 // implémentation récursive de l'algorithme de backtracking
 void knapsackBT1(int idx) {
-    // Si l'indice actuel est hors le tableau ou si le sac à dos est plein, mettre à jour bestValue si nécessaire
-    if (idx == g_n || g_currentWeight == g_W) {
-        g_bestValue = max(g_bestValue, g_currentValue);
-        return;
-    }
-
     int absExtT = max(abs(maxCodom1(idx)), abs(minCodom1(idx)));
 
-    if (!(absExtT * (g_n - idx + 1) < abs(currentValue))) {
-        return;
-    }
+    if ((absExtT * (g_n - idx) >= abs(g_currentValue))) {
+        // Si l'indice actuel est hors le tableau ou si le sac à dos est plein, mettre à jour bestValue si nécessaire
+        if (idx == g_n || g_currentWeight == g_W) {
+            g_bestValue = max(g_bestValue, g_currentValue);
+            return;
+        }
 
+        
 
-    // sauter l'objet courant
-    knapsackBT1(idx + 1);
-
-    // Inclure l'objet actuel s'il ne dépasse pas la capacité du sac à dos
-    if (g_currentWeight + g_items[idx].weight <= g_W) {
-        // Mettre à jour currentWeight et currentValue avant l'appel récursif
-        g_currentWeight += g_items[idx].weight;
-        g_currentValue += g_items[idx].value;
-
+        // sauter l'objet courant
         knapsackBT1(idx + 1);
+        
 
-        // Annuler la décision d'inclure l'objet (backtracking)
-        g_currentWeight -= g_items[idx].weight;
-        g_currentValue -= g_items[idx].value;
+        
+            
+        // Inclure l'objet actuel s'il ne dépasse pas la capacité du sac à dos
+        if (g_currentWeight + g_items[idx].weight <= g_W) {
+            // Mettre à jour currentWeight et currentValue avant l'appel récursif
+            g_currentWeight += g_items[idx].weight;
+            g_currentValue += g_items[idx].value;
+
+            knapsackBT1(idx + 1);
+
+            // Annuler la décision d'inclure l'objet (backtracking)
+            g_currentWeight -= g_items[idx].weight;
+            g_currentValue -= g_items[idx].value;
+        }
+        
     }
 }
 
@@ -142,6 +142,34 @@ int knapsackDP(int W, Item items[], int n) {
     return result;
 }
 
+int knapsackDP_Value(int W, Item items[], int n) {
+    int V = 0;
+    for (int i = 0; i < n; i++) {
+        V += items[i].value;
+    }
+    
+    int dp[V + 1];
+    dp[0] = 0;
+    for (int v = 1; v <= V; v++) {
+        dp[v] = 9999;
+    }
+    
+    for (int i = 0; i < n; i++) {
+        for (int v = V; v >= items[i].value; v--) {
+            dp[v] = min(dp[v], dp[v - items[i].value] + items[i].weight);
+        }
+    }
+    
+    int max_value = 0;
+    for (int v = 0; v <= V; v++) {
+        if (dp[v] <= W) {
+            max_value = v;
+        }
+    }
+    
+    return max_value;
+}
+
 
 
 
@@ -155,7 +183,7 @@ int main() {
     }
 
     // Variables pour stocker les somme des temps et compter les instances par taille de problème
-    double sumTimeBT1 = 0, sumTimeBT2 = 0, sumTimeDP = 0;
+    double sumTimeBT1 = 0, sumTimeBT2 = 0, sumTimeDP = 0, sumTimeDP_Value = 0;
     int count = 0, currentN = -1;
 
     char line[4096];
@@ -167,18 +195,19 @@ int main() {
         if (n != currentN) {
             if (count > 0) {
                 // Écrivez les moyennes pour la taille de problème précédente
-                fprintf(out, "%d, %f, %f, %f\n",
-                        currentN, sumTimeBT1 / count, sumTimeBT2 / count, sumTimeDP / count);
+                fprintf(out, "%d, %f, %f, %f, %f\n",
+                        currentN, sumTimeBT1 / count, sumTimeBT2 / count, sumTimeDP / count, sumTimeDP_Value / count);
             }
             // Réinitialisez les compteurs pour la nouvelle taille
             currentN = n;
-            sumTimeBT1 = sumTimeBT2 = sumTimeDP = 0;
+            sumTimeBT1 = sumTimeBT2 = sumTimeDP = sumTimeDP_Value = 0;
             count = 0;
         }
 
         Item items[n];
         char *token = strtok(line, ",");
         token = strtok(NULL, ","); // Passer les deux premiers tokens (W et n)
+        token = strtok(NULL, ","); // ligne ajoutee
         for (int i = 0; i < n && token != NULL; i++) {
             sscanf(token, "%d", &items[i].weight);
             token = strtok(NULL, ",");
@@ -215,6 +244,12 @@ int main() {
         double timeDP = (double)(end - start) / CLOCKS_PER_SEC;
         sumTimeDP += timeDP;
 
+        start = clock();
+        int maxValDP_Value = knapsackDP_Value(W, items, n);
+        end = clock();
+        double timeDP_Value = (double)(end - start) / CLOCKS_PER_SEC;
+        sumTimeDP_Value += timeDP_Value;
+
         count++;
 
         fprintf(sol, "%d, %d, %f, %d, %f, %d, %f, %d\n",
@@ -223,16 +258,12 @@ int main() {
 
     // N'oubliez pas d'écrire les moyennes pour la dernière taille de problème
     if (count > 0) {
-        fprintf(out, "%d, %f, %f, %f\n",
-                currentN, sumTimeBT1 / count, sumTimeBT2 / count, sumTimeDP / count);
+        fprintf(out, "%d, %f, %f, %f, %f\n",
+                currentN, sumTimeBT1 / count, sumTimeBT2 / count, sumTimeDP / count, sumTimeDP_Value / count);
     }
 
     fclose(fp);
     fclose(out);
+    fclose(sol);
     return 0;
 }
-
-
-
-
-
